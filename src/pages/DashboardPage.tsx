@@ -86,10 +86,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardStats?.totalRequests || 0}</div>
-            {/* <p className="text-xs text-muted-foreground">
-              {dashboardStats?.userGrowth > 0 ? "+" : ""}
-              {dashboardStats?.userGrowth || 0}% from last month
-            </p> */}
+
           </CardContent>
         </Card>
 
@@ -100,10 +97,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardStats?.avgResponseTime || 0}</div>
-            {/* <p className="text-xs text-muted-foreground">
-              {dashboardStats?.sessionGrowth > 0 ? "+" : ""}
-              {dashboardStats?.sessionGrowth || 0}% from last hour
-            </p> */}
+
           </CardContent>
         </Card>
 
@@ -114,23 +108,8 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardStats?.successfulRequests || 0}</div>
-            {/* <p className="text-xs text-muted-foreground">
-              {dashboardStats?.logGrowth > 0 ? "+" : ""}
-              {dashboardStats?.logGrowth || 0}% from yesterday
-            </p> */}
           </CardContent>
         </Card>
-
-        {/* <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Configuration</CardTitle>
-            <Settings className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{user?.role === "admin" ? "Admin" : "User"}</div>
-            <p className="text-xs text-muted-foreground">Role-based access</p>
-          </CardContent>
-        </Card> */}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -151,10 +130,6 @@ export default function DashboardPage() {
                   <p>{user?.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Role</p>
-                  <p className="capitalize">{user?.role}</p>
-                </div>
-                <div>
                   <p className="text-sm font-medium text-muted-foreground">Member Since</p>
                   <p>{new Date(user?.createdAt || Date.now()).toLocaleDateString()}</p>
                 </div>
@@ -162,28 +137,6 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Your recent actions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {userData?.recentActivity?.map((activity, index) => (
-                <div key={index} className="flex items-center gap-4">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Activity className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(activity.timestamp).toLocaleString()}</p>
-                  </div>
-                </div>
-              )) || <p className="text-sm text-muted-foreground">No recent activity</p>}
-            </div>
-          </CardContent>
-        </Card> */}
       </div>
     </div>
   )

@@ -2,22 +2,27 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table"
 import { Alert, AlertDescription } from "../components/ui/alert"
 import {
-  Search,
   RefreshCw,
   Users,
   Mail,
   Phone,
   AlertCircle,
+  UserPlus,
+  MapPin,
+  Building,
+  Loader2,
 } from "lucide-react"
-import { fetchAllUsers } from "../lib/api"
+import { createUser, fetchAllUsers } from "../lib/api"
 import { useToast } from "../hooks/use-toast"
-import { ExtendedUserType } from "@/lib/types"
-
+import { ExtendedUserType, UserFormData } from "@/lib/types"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function UsersPage() {
   const { toast } = useToast()
@@ -25,9 +30,22 @@ export default function UsersPage() {
   const [filteredUsers, setFilteredUsers] = useState<ExtendedUserType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
   const [sortField, setSortField] = useState<keyof ExtendedUserType>("name")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formData, setFormData] = useState<UserFormData>({
+    name: "",
+    username: "",
+    email: "",
+    phone: "",
+    company: "",
+    street: "",
+    city: "",
+    zipcode: "",
+    country: "USA",
+  })
+  const [formErrors, setFormErrors] = useState<Partial<UserFormData>>({})
 
   useEffect(() => {
     loadUsers()
@@ -55,43 +73,6 @@ export default function UsersPage() {
     }
   }
 
-  useEffect(() => {
-    let filtered = [...users]
-    // Apply search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (userData) =>
-          userData.name.toLowerCase().includes(query) ||
-          userData.email.toLowerCase().includes(query) ||
-          userData.username?.toLowerCase().includes(query) ||
-          userData.phone?.toLowerCase().includes(query) ||
-          userData.id.toString().toLowerCase().includes(query),
-      )
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      const aValue = a[sortField]
-      const bValue = b[sortField]
-
-      if (aValue === undefined || bValue === undefined) return 0
-
-      const comparison = aValue < bValue ? -1 : aValue > bValue ? 1 : 0
-      return sortDirection === "asc" ? comparison : -comparison
-    })
-
-    setFilteredUsers(filtered)
-  }, [users, searchQuery, sortField, sortDirection])
-
-  const handleRefresh = async () => {
-    await loadUsers()
-    toast({
-      title: "Success",
-      description: "Users refreshed successfully",
-    })
-  }
-
   const handleSort = (field: keyof ExtendedUserType) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc")
@@ -101,6 +82,127 @@ export default function UsersPage() {
     }
   }
 
+  // Form validation
+  const validateForm = (): boolean => {
+    const errors: Partial<UserFormData> = {}
+
+    if (!formData.name.trim()) {
+      errors.name = "Name is required"
+    }
+
+    if (!formData.username.trim()) {
+      errors.username = "Username is required"
+    } else if (formData.username.length < 3) {
+      errors.username = "Username must be at least 3 characters"
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Please enter a valid email address"
+    }
+
+    if (!formData.phone.trim()) {
+      errors.phone = "Phone number is required"
+    }
+
+    if (!formData.company.trim()) {
+      errors.company = "Company is required"
+    }
+
+    if (!formData.street.trim()) {
+      errors.street = "Street address is required"
+    }
+
+    if (!formData.city.trim()) {
+      errors.city = "City is required"
+    }
+
+    if (!formData.zipcode.trim()) {
+      errors.zipcode = "Zipcode is required"
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const userData = {
+        name: formData.name.trim(),
+        username: formData.username.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        company: formData.company.trim(),
+        address: {
+          street: formData.street.trim(),
+          city: formData.city.trim(),
+          zipcode: formData.zipcode.trim(),
+          country: formData.country.trim(),
+        },
+      }
+
+      await createUser(userData)
+
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      })
+
+      // Reset form and close modal
+      setFormData({
+        name: "",
+        username: "",
+        email: "",
+        phone: "",
+        company: "",
+        street: "",
+        city: "",
+        zipcode: "",
+        country: "USA",
+      })
+      setFormErrors({})
+      setIsAddUserOpen(false)
+
+      // Refresh users list
+      await loadUsers()
+    } catch (error) {
+      console.error("Error creating user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create user. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Handle form input changes
+  const handleInputChange = (field: keyof UserFormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    // Clear error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors((prev) => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const handleRefresh = async () => {
+    await loadUsers()
+    toast({
+      title: "Success",
+      description: "Users refreshed successfully",
+    })
+  }
 
   if (error) {
     return (
@@ -139,6 +241,181 @@ export default function UsersPage() {
         </div>
       </div>
 
+      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+        <DialogTrigger asChild>
+        <Button size="sm">
+            <UserPlus className="mr-2 h-4 w-4" />
+            Add User
+        </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>Create a new user account with the required information below.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Personal Information */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Personal Information</h3>
+
+                <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                    id="name"
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    className={formErrors.name ? "border-red-500" : ""}
+                />
+                {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
+                </div>
+
+                <div className="space-y-2">
+                <Label htmlFor="username">Username *</Label>
+                <Input
+                    id="username"
+                    placeholder="johndoe"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange("username", e.target.value)}
+                    className={formErrors.username ? "border-red-500" : ""}
+                />
+                {formErrors.username && <p className="text-sm text-red-500">{formErrors.username}</p>}
+                </div>
+
+                <div className="space-y-2">
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                    id="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    className={formErrors.email ? "border-red-500" : ""}
+                />
+                {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
+                </div>
+
+                <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                    id="phone"
+                    placeholder="+1 (555) 123-4567"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    className={formErrors.phone ? "border-red-500" : ""}
+                />
+                {formErrors.phone && <p className="text-sm text-red-500">{formErrors.phone}</p>}
+                </div>
+
+            </div>
+
+            {/* Company & Address Information */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Company & Address</h3>
+
+                <div className="space-y-2">
+                <Label htmlFor="company">Company *</Label>
+                <div className="relative">
+                    <Building className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                    id="company"
+                    placeholder="Tech Corp"
+                    className={`pl-8 ${formErrors.company ? "border-red-500" : ""}`}
+                    value={formData.company}
+                    onChange={(e) => handleInputChange("company", e.target.value)}
+                    />
+                </div>
+                {formErrors.company && <p className="text-sm text-red-500">{formErrors.company}</p>}
+                </div>
+
+                <div className="space-y-2">
+                <Label htmlFor="street">Street Address *</Label>
+                <div className="relative">
+                    <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                    id="street"
+                    placeholder="123 Main Street"
+                    className={`pl-8 ${formErrors.street ? "border-red-500" : ""}`}
+                    value={formData.street}
+                    onChange={(e) => handleInputChange("street", e.target.value)}
+                    />
+                </div>
+                {formErrors.street && <p className="text-sm text-red-500">{formErrors.street}</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                    <Label htmlFor="city">City *</Label>
+                    <Input
+                    id="city"
+                    placeholder="New York"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange("city", e.target.value)}
+                    className={formErrors.city ? "border-red-500" : ""}
+                    />
+                    {formErrors.city && <p className="text-sm text-red-500">{formErrors.city}</p>}
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="zipcode">Zipcode *</Label>
+                    <Input
+                    id="zipcode"
+                    placeholder="10001"
+                    value={formData.zipcode}
+                    onChange={(e) => handleInputChange("zipcode", e.target.value)}
+                    className={formErrors.zipcode ? "border-red-500" : ""}
+                    />
+                    {formErrors.zipcode && <p className="text-sm text-red-500">{formErrors.zipcode}</p>}
+                </div>
+                </div>
+
+                <div className="space-y-2">
+                <Label htmlFor="country">Country *</Label>
+                <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
+                    <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    <SelectItem value="USA">United States</SelectItem>
+                    <SelectItem value="Canada">Canada</SelectItem>
+                    <SelectItem value="UK">United Kingdom</SelectItem>
+                    <SelectItem value="Germany">Germany</SelectItem>
+                    <SelectItem value="France">France</SelectItem>
+                    <SelectItem value="Australia">Australia</SelectItem>
+                    </SelectContent>
+                </Select>
+                </div>
+            </div>
+            </div>
+
+            <DialogFooter>
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddUserOpen(false)}
+                disabled={isSubmitting}
+            >
+                Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                </>
+                ) : (
+                <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Create User
+                </>
+                )}
+            </Button>
+            </DialogFooter>
+        </form>
+        </DialogContent>
+    </Dialog>
+
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -165,7 +442,7 @@ export default function UsersPage() {
         </CardHeader>
         <CardContent>
           {/* Filters and Search */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+          {/* <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -175,7 +452,7 @@ export default function UsersPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-          </div>
+          </div> */}
 
           {isLoading ? (
             <div className="flex h-64 w-full items-center justify-center">

@@ -71,3 +71,15 @@ export interface ExtendedUserType {
   // lastLogin?: string
   // status?: "active" | "inactive" | "suspended"
 }
+
+export interface UserFormData {
+  name: string
+  username: string
+  email: string
+  phone: string
+  company: string
+  street: string
+  city: string
+  zipcode: string
+  country: string
+}

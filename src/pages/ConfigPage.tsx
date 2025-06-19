@@ -23,16 +23,6 @@ export default function ConfigPage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Redirect non-admin users
-    // if (user && user.role !== "admin") {
-    //   toast({
-    //     title: "Access Denied",
-    //     description: "You don't have permission to access this page",
-    //     variant: "destructive",
-    //   })
-    //   navigate("/dashboard")
-    //   return
-    // }
 
     const loadConfig = async () => {
       try {
@@ -50,9 +40,7 @@ export default function ConfigPage() {
       }
     }
 
-    // if (user && user.role === "admin") {
-      loadConfig()
-    // }
+    loadConfig()
   }, [user, navigate, toast])
 
   const handleSaveConfig = async () => {
@@ -104,16 +92,6 @@ export default function ConfigPage() {
     )
   }
 
-  // if (!user || user.role !== "admin") {
-  //   return (
-  //     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-8">
-  //       <ShieldAlert className="h-16 w-16 text-destructive" />
-  //       <h2 className="text-2xl font-bold">Access Denied</h2>
-  //       <p className="text-muted-foreground">You don't have permission to access this page.</p>
-  //     </div>
-  //   )
-  // }
-
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between">
@@ -145,6 +123,21 @@ export default function ConfigPage() {
                 onCheckedChange={(checked: any) => setConfig((prev) => (prev ? { ...prev, loggingEnabled: checked } : null))}
               />
               <Label htmlFor="logging-enabled">Enable Logging</Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              When enabled, the system will record all actions and events to the logs database.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Caching Settings</h3>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="logging-enabled"
+                checked={config?.cacheEnabled || false}
+                onCheckedChange={(checked: any) => setConfig((prev) => (prev ? { ...prev, cacheEnabled: checked } : null))}
+              />
+              <Label htmlFor="logging-enabled">Enable Caching</Label>
             </div>
             <p className="text-sm text-muted-foreground">
               When enabled, the system will record all actions and events to the logs database.

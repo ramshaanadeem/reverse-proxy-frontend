@@ -29,3 +29,19 @@ export async function fetchDashboardStats(): Promise<any> {
 export async function logoutUser(): Promise<void> {
   return await apiClient.post("/api/auth/logout")
 }
+
+export async function createUser(userData: {
+  name: string
+  username: string
+  email: string
+  phone: string
+  company: string
+  address: {
+    street: string
+    city: string
+    zipcode: string
+    country: string
+  }
+}): Promise<UserType> {
+  return await apiClient.post("/api/users", userData)
+}
