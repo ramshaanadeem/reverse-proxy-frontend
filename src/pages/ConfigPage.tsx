@@ -20,6 +20,8 @@ export default function ConfigPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [whitelist, setWhitelist] = useState("")
+  const [blacklist, setBlacklist] = useState("")
+
   const { toast } = useToast()
 
   useEffect(() => {
@@ -53,12 +55,17 @@ export default function ConfigPage() {
         .split("\n")
         .map((item) => item.trim())
         .filter(Boolean)
+      const blacklistArray = blacklist
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean)
       const { __v, _id, ...restConfig } = config;
         
       const updatedConfig = {
         ...restConfig,
         loggingEnabled: config.loggingEnabled,
         whitelistedEndpoints: whitelistArray,
+        blacklistedEndpoints: blacklistArray
       }
 
       await updateConfig(updatedConfig)
@@ -159,6 +166,22 @@ export default function ConfigPage() {
                 placeholder="https://example.com"
                 value={whitelist}
                 onChange={(e) => setWhitelist(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Endpoint Blacklist</h3>
+            <p className="text-sm text-muted-foreground">
+              Add endpoints that are not allowed to access the API (one per line)
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="blacklist">Blacklisted Endpoints</Label>
+              <textarea
+                id="blacklist"
+                className="h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="https://example.com"
+                value={blacklist}
+                onChange={(e) => setBlacklist(e.target.value)}
               />
             </div>
           </div>
